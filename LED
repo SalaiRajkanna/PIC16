@@ -1,0 +1,35 @@
+/*
+ * File:   main.c
+ * Author: Rajkanna
+ *
+ * Created on 6 October, 2023, 4:39 PM
+ */
+#include <xc.h>
+//__CONFIG _DEBUG_OFF&_CP_ALL&_WRT_HALF&_CPD_ON&_LVP_OFF&_BODEN_OFF&_PWRTE_ON&_WDT_OFF&_HS_OSC
+// CONFIG
+#pragma config FOSC = HS        // Oscillator Selection bits (HS oscillator)
+#pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
+#pragma config PWRTE = ON       // Power-up Timer Enable bit (PWRT enabled)
+#pragma config BOREN = OFF      // Brown-out Reset Enable bit (BOR disabled)
+#pragma config LVP = OFF        // Low-Voltage (Single-Supply) In-Circuit Serial Programming Enable bit (RB3 is digital I/O, HV on MCLR must be used for programming)
+#pragma config CPD = ON         // Data EEPROM Memory Code Protection bit (Data EEPROM code-protected)
+#pragma config WRT = HALF       // Flash Program Memory Write Enable bits (0000h to 0FFFh write-protected; 1000h to 1FFFh may be written to by EECON control)
+#pragma config CP = ON          // Flash Program Memory Code Protection bit (All program memory code-protected)
+
+// #pragma config statements should precede project file includes.
+// Use project enums instead of #define for ON and OFF.
+
+
+void main(void) {
+    int i;
+    TRISB=0x00;
+	
+	while(1)
+    {
+		PORTB=0x55;
+        for(i=0;i<30000;i++);
+		PORTB=0xAA;
+        for(i=0;i<30000;i++);
+    }
+        return;
+}
