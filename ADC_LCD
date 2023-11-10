@@ -1,0 +1,109 @@
+/* 
+ * File:   main.c
+ * Author: Rajkanna
+ *
+ * Created on 9 November, 2023, 3:30 PM
+ */
+// CONFIG
+#pragma config FOSC = HS        // Oscillator Selection bits (HS oscillator)
+#pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
+#pragma config PWRTE = ON       // Power-up Timer Enable bit (PWRT enabled)
+#pragma config BOREN = OFF      // Brown-out Reset Enable bit (BOR disabled)
+#pragma config LVP = OFF        // Low-Voltage (Single-Supply) In-Circuit Serial Programming Enable bit (RB3 is digital I/O, HV on MCLR must be used for programming)
+#pragma config CPD = ON         // Data EEPROM Memory Code Protection bit (Data EEPROM code-protected)
+#pragma config WRT = HALF       // Flash Program Memory Write Enable bits (0000h to 0FFFh write-protected; 1000h to 1FFFh may be written to by EECON control)
+#pragma config CP = ON          // Flash Program Memory Code Protection bit (All program memory code-protected)
+
+// #pragma config statements should precede project file includes.
+// Use project enums instead of #define for ON and OFF.
+
+#include <xc.h>
+#include<stdio.h>
+#define _XTAL_FREQ     20000000
+// Function prototypes
+void LCD_Init();
+void LCD_Command(char cmd);
+void LCD_Char(char data);
+void LCD_String(const char *str);
+void ADC_Init();
+int ADC_Read();
+
+void main() {
+    // Initialization
+    TRISD = 0x00; // Port D as output for LCD data
+    TRISC1 = 0;   // RC1 as output for LCD RS
+    TRISC0 = 0;   // RC0 as output for LCD RW
+    TRISC2 = 0;   // RC2 as output for LCD E
+    TRISE1 = 1;   // RD0 as input for ADC (AN0)
+
+    LCD_Init();
+    ADC_Init();
+
+    while (1) {
+        int adc_value = ADC_Read();
+
+        // Convert ADC value to a string
+        char adc_str[5];
+        sprintf(adc_str, "%04d", adc_value);
+
+        // Display ADC value on LCD
+        LCD_Command(0x80); // Move to the first line
+        LCD_String("ADC Value:");
+        LCD_Command(0xC0); // Move to the second line
+        LCD_String(adc_str);
+    }
+}
+
+void LCD_Init() {
+    // LCD initialization sequence
+    LCD_Command(0x38); // 8-bit mode, 2 lines, 5x7 font
+    LCD_Command(0x0C); // Display ON, Cursor OFF
+    LCD_Command(0x06); // Entry mode: Increment cursor position, No shift
+    LCD_Command(0x01); // Clear display
+    __delay_ms(2);     // Delay for LCD to clear
+}
+
+void LCD_Command(char cmd) {
+    PORTD = cmd;    // Send command to data pins
+    RC1 = 0;        // RS = 0 for command
+    RC0 = 0;        // RW = 0 for write
+    RC2 = 1;        // Enable high
+    __delay_ms(1);  // Short delay
+    RC2 = 0;        // Enable low
+    __delay_ms(1);  // Short delay
+}
+
+void LCD_Char(char data) {
+    PORTD = data;   // Send data to data pins
+    RC1 = 1;        // RS = 1 for data
+    RC0 = 0;        // RW = 0 for write
+    RC2 = 1;        // Enable high
+    __delay_ms(1);  // Short delay
+    RC2 = 0;        // Enable low
+    __delay_ms(1);  // Short delay
+}
+
+void LCD_String(const char *str) {
+    while (*str)
+        LCD_Char(*str++);
+}
+
+void ADC_Init() {
+    // ADC configuration
+    //ADCON0 = 0x71; // ADC ON, Channel 5 (AN5), Fosc/8 ADCON0=0x81
+    //ADCON1 = 0x80; // All pins as analog inputs ADCON1=0x80
+    ADCON0 = 0x81;// ADC ON, Channel 0 (AN0), Fosc/8
+    ADCON1 = 0x80;// All pins as analog inputs
+}
+
+int ADC_Read() {
+    // Start ADC conversion
+    GO_nDONE = 1;
+
+    // Wait for conversion to complete
+    while (GO_nDONE)
+        ;
+
+    // Return ADC result
+    return (ADRESH << 8) + ADRESL;
+}
